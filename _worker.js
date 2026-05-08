@@ -882,17 +882,18 @@ async function processOAuthCode(code, state, clientIP, request, env, corsHeaders
         }
         
         // 获取访问令牌
+        // Linux Do Connect 要求使用 HTTP Basic 方式提交客户端凭据。
+        const clientCredentials = btoa(`${env.OAUTH_CLIENT_ID}:${env.OAUTH_CLIENT_SECRET}`);
         const tokenResponse = await fetch(`${env.OAUTH_BASE_URL}/oauth2/token`, {
             method: 'POST',
             headers: {
+                'Authorization': `Basic ${clientCredentials}`,
                 'Content-Type': 'application/x-www-form-urlencoded',
                 'Accept': 'application/json',
                 'User-Agent': '2FA-Manager/1.0'
             },
             body: new URLSearchParams({
                 grant_type: 'authorization_code',
-                client_id: env.OAUTH_CLIENT_ID,
-                client_secret: env.OAUTH_CLIENT_SECRET,
                 code: code,
                 redirect_uri: env.OAUTH_REDIRECT_URI
             })
@@ -931,7 +932,7 @@ async function processOAuthCode(code, state, clientIP, request, env, corsHeaders
             userInfo: {
                 id: userData.id,
                 username: userData.username,
-                nickname: userData.nickname,
+                nickname: userData.nickname || userData.name,
                 email: userData.email,
                 avatar_template: userData.avatar_template
             },
