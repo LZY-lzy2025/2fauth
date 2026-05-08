@@ -2460,23 +2460,47 @@ header h1 {
 body {
     font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
     color: #2f332f;
-    background:
-        radial-gradient(circle at 15% 15%, rgba(120, 142, 124, 0.22), transparent 28%),
-        radial-gradient(circle at 84% 8%, rgba(178, 151, 105, 0.16), transparent 24%),
-        linear-gradient(145deg, #f7f3e8 0%, #eef2e7 48%, #e2ebe6 100%);
+    background-color: #f7f1e2;
+    background-image:
+        url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1600 900'%3E%3Cdefs%3E%3ClinearGradient id='m1' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%236b806f' stop-opacity='.46'/%3E%3Cstop offset='1' stop-color='%236b806f' stop-opacity='.08'/%3E%3C/linearGradient%3E%3ClinearGradient id='m2' x1='0' y1='0' x2='0' y2='1'%3E%3Cstop offset='0' stop-color='%2398a27f' stop-opacity='.34'/%3E%3Cstop offset='1' stop-color='%2398a27f' stop-opacity='.06'/%3E%3C/linearGradient%3E%3C/defs%3E%3Ccircle cx='1320' cy='150' r='86' fill='%23c98e54' fill-opacity='.2'/%3E%3Cpath d='M0 540 C120 455 220 475 330 390 C455 292 565 430 690 330 C820 225 980 430 1115 315 C1265 186 1410 345 1600 230 L1600 900 L0 900 Z' fill='url(%23m2)'/%3E%3Cpath d='M0 650 C155 548 292 610 435 482 C585 346 735 575 900 430 C1070 280 1215 535 1365 405 C1465 318 1525 305 1600 326 L1600 900 L0 900 Z' fill='url(%23m1)'/%3E%3Cpath d='M102 246 C220 206 320 214 430 248' fill='none' stroke='%236b806f' stroke-width='4' stroke-opacity='.14' stroke-linecap='round'/%3E%3Cpath d='M1210 284 C1330 238 1465 244 1560 292' fill='none' stroke='%236b806f' stroke-width='4' stroke-opacity='.14' stroke-linecap='round'/%3E%3C/svg%3E"),
+        radial-gradient(circle at 18% 12%, rgba(181, 141, 80, 0.18), transparent 24%),
+        radial-gradient(circle at 86% 5%, rgba(120, 142, 124, 0.16), transparent 26%),
+        linear-gradient(145deg, #fbf5e8 0%, #eef2e5 50%, #dfeae4 100%);
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat;
+    background-position: center bottom, left top, right top, center;
+    background-size: cover, auto, auto, cover;
+    background-attachment: fixed;
     position: relative;
     overflow-x: hidden;
 }
 
-body::before {
+body::before,
+body::after {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
+    z-index: 0;
+}
+
+.container {
+    position: relative;
+    z-index: 1;
+}
+
+body::before {
     background:
-        linear-gradient(115deg, transparent 0 58%, rgba(67, 88, 76, 0.06) 58% 59%, transparent 59% 100%),
-        radial-gradient(ellipse at 50% 100%, rgba(83, 103, 91, 0.16), transparent 42%);
-    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.45));
+        linear-gradient(90deg, rgba(68, 92, 76, 0.14) 0 2px, transparent 2px 100%) calc(100% - 132px) 74px / 34px 78% repeat-y,
+        linear-gradient(90deg, transparent 0 9px, rgba(68, 92, 76, 0.12) 9px 11px, transparent 11px 100%) calc(100% - 116px) 104px / 34px 78% repeat-y,
+        radial-gradient(ellipse at 50% 102%, rgba(83, 103, 91, 0.2), transparent 44%);
+    opacity: 0.9;
+}
+
+body::after {
+    background:
+        radial-gradient(ellipse at 14% 78%, rgba(255, 250, 240, 0.72), transparent 36%),
+        radial-gradient(ellipse at 77% 28%, rgba(255, 250, 240, 0.58), transparent 32%);
+    mix-blend-mode: screen;
 }
 
 header {
@@ -2502,6 +2526,37 @@ header h1 {
 #mainSection {
     padding-bottom: 7rem;
 }
+
+#accountsTab > .card {
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    padding-inline: 0;
+    backdrop-filter: none;
+}
+
+#accountsTab > .card::before {
+    content: none;
+}
+
+#accountsTab h2 {
+    color: #243a30;
+    text-shadow: 0 2px 0 rgba(255, 250, 240, 0.72), 0 14px 28px rgba(56, 80, 68, 0.16);
+}
+
+#accountsTab .search-section {
+    padding: 0.9rem;
+    border: 1px solid rgba(142, 121, 82, 0.22);
+    border-radius: 18px;
+    background: rgba(255, 248, 232, 0.9);
+    box-shadow: 0 14px 32px rgba(65, 75, 65, 0.08);
+}
+
+#accountsTab .search-input {
+    background: #fffdf6;
+    backdrop-filter: none;
+}
+
 
 .quick-nav-panel {
     position: fixed;
