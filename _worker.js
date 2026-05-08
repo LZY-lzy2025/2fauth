@@ -1243,7 +1243,6 @@ header h1 {
 /* 卡片样式 */
 .card {
     background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
     border-radius: 16px;
     padding: 2rem;
     margin-bottom: 1.5rem;
@@ -1257,7 +1256,6 @@ header h1 {
     display: flex;
     margin-bottom: 1rem;
     background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(20px);
     border-radius: 16px;
     padding: 0.5rem;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
@@ -1754,18 +1752,16 @@ header h1 {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
+    background: rgba(0, 0, 0, 0.35);
     display: flex;
     justify-content: center;
     align-items: center;
     z-index: 1000;
-    backdrop-filter: blur(8px);
     padding: 1rem;
 }
 
 .modal-content {
-    background: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(20px);
+    background: #ffffff;
     border-radius: 20px;
     padding: 2rem;
     max-width: 500px;
@@ -2492,15 +2488,88 @@ header h1 {
 }
 
 .card {
-    background: rgba(255, 252, 241, 0.88);
+    background: #fffaf0;
     border-radius: 22px;
     border: 1px solid rgba(142, 121, 82, 0.22);
     box-shadow: 0 24px 60px rgba(65, 75, 65, 0.13), inset 0 0 0 1px rgba(156, 134, 94, 0.12);
 }
 
 .nav-tabs {
-    background: rgba(255, 252, 241, 0.82);
+    background: #fffaf0;
     border-radius: 18px;
+}
+
+#mainSection {
+    padding-bottom: 7rem;
+}
+
+.quick-nav-panel {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 6rem;
+    z-index: 900;
+    width: min(280px, calc(100vw - 2rem));
+    margin: 0;
+    padding: 0.5rem;
+    flex-direction: column;
+    gap: 0;
+    background: #ffffff;
+    border: 1px solid rgba(56, 80, 68, 0.14);
+    border-radius: 16px;
+    box-shadow: 0 18px 42px rgba(56, 80, 68, 0.2);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(12px) scale(0.98);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.quick-nav-panel.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+.quick-nav-panel .tab-btn {
+    width: 100%;
+    min-width: auto;
+    flex: none;
+    justify-content: flex-start;
+    border-radius: 12px;
+    color: #253b31;
+    background: transparent;
+    box-shadow: none;
+}
+
+.quick-nav-panel .tab-btn + .tab-btn {
+    border-top: 1px solid rgba(56, 80, 68, 0.1);
+}
+
+.quick-nav-panel .tab-btn.active {
+    color: #fffaf0;
+    background: linear-gradient(135deg, #7f927c 0%, #a68059 100%);
+}
+
+.quick-nav-toggle {
+    position: fixed;
+    right: 1.5rem;
+    bottom: 1.5rem;
+    z-index: 901;
+    width: 4rem;
+    height: 4rem;
+    border-radius: 50%;
+    border: none;
+    background: linear-gradient(135deg, #7f927c 0%, #a68059 100%);
+    color: #fffaf0;
+    box-shadow: 0 18px 34px rgba(56, 80, 68, 0.24);
+    cursor: pointer;
+    font-size: 1.6rem;
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.quick-nav-toggle:hover,
+.quick-nav-toggle.open {
+    transform: translateY(-2px) rotate(45deg);
+    box-shadow: 0 22px 42px rgba(56, 80, 68, 0.3);
 }
 
 .btn-primary,
@@ -2703,14 +2772,15 @@ header h1 {
             </div>
             
             <div id="mainSection" class="hidden">
-                <div class="nav-tabs">
-                    <button class="tab-btn active" data-tab="accounts" onclick="showTabByButton(this, 'accounts')">📱 我的账户</button>
-                    <button class="tab-btn" data-tab="add" onclick="showTabByButton(this, 'add')">➕ 添加账户</button>
+                <div id="quickNavPanel" class="nav-tabs quick-nav-panel" aria-label="功能导航">
+                    <button class="tab-btn active" data-tab="accounts" onclick="showTabByButton(this, 'accounts')">📱 已保存账户</button>
+                    <button class="tab-btn" data-tab="add" onclick="showTabByButton(this, 'add')">➕ 手动添加</button>
                     <button class="tab-btn" data-tab="scan" onclick="showTabByButton(this, 'scan')">📷 扫描二维码</button>
-                    <button class="tab-btn" data-tab="import" onclick="showTabByButton(this, 'import')">📥 导入数据</button>
-                    <button class="tab-btn" data-tab="export" onclick="showTabByButton(this, 'export')">📤 导出数据</button>
-                    <button class="tab-btn" data-tab="webdav" onclick="showTabByButton(this, 'webdav')">☁️ WebDAV备份</button>
+                    <button class="tab-btn" data-tab="import" onclick="showTabByButton(this, 'import')">📥 批量导入</button>
+                    <button class="tab-btn" data-tab="export" onclick="showTabByButton(this, 'export')">📤 批量导出</button>
+                    <button class="tab-btn" data-tab="webdav" onclick="showTabByButton(this, 'webdav')">☁️ 还原配置</button>
                 </div>
+                <button id="quickNavToggle" class="quick-nav-toggle" type="button" onclick="toggleNavigationMenu()" aria-label="打开功能导航" aria-expanded="false">＋</button>
                 
                 <div id="accountsTab" class="tab-content active">
                     <div class="card">
@@ -3034,6 +3104,10 @@ header h1 {
         
         function setupEventListeners() {
             document.getElementById('addAccountForm').addEventListener('submit', handleAddAccount);
+            document.addEventListener('click', handleNavigationOutsideClick);
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'Escape') closeNavigationMenu();
+            });
             const adminLoginForm = document.getElementById('adminLoginForm');
             if (adminLoginForm) {
                 adminLoginForm.addEventListener('submit', handleAdminLogin);
@@ -3376,12 +3450,14 @@ header h1 {
             document.getElementById('loginSection').classList.remove('hidden');
             document.getElementById('mainSection').classList.add('hidden');
             document.getElementById('userInfo').classList.add('hidden');
+            closeNavigationMenu();
         }
         
         function showMainSection() {
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('mainSection').classList.remove('hidden');
             document.getElementById('userInfo').classList.remove('hidden');
+            showTab('accounts', { refresh: false });
             
             if (userInfo) {
                 document.getElementById('userName').textContent = userInfo.username || userInfo.nickname || '未知用户';
@@ -3397,18 +3473,55 @@ header h1 {
             }
         }
         
+        function toggleNavigationMenu() {
+            const panel = document.getElementById('quickNavPanel');
+            const toggle = document.getElementById('quickNavToggle');
+            if (!panel || !toggle) return;
+
+            const isOpen = panel.classList.toggle('open');
+            toggle.classList.toggle('open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            toggle.setAttribute('aria-label', isOpen ? '关闭功能导航' : '打开功能导航');
+        }
+
+        function closeNavigationMenu() {
+            const panel = document.getElementById('quickNavPanel');
+            const toggle = document.getElementById('quickNavToggle');
+            if (!panel || !toggle) return;
+
+            panel.classList.remove('open');
+            toggle.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', '打开功能导航');
+        }
+
+        function handleNavigationOutsideClick(event) {
+            const panel = document.getElementById('quickNavPanel');
+            const toggle = document.getElementById('quickNavToggle');
+            if (!panel || !toggle || !panel.classList.contains('open')) return;
+            if (panel.contains(event.target) || toggle.contains(event.target)) return;
+            closeNavigationMenu();
+        }
+
         function showTabByButton(buttonElement, tabName) {
+            showTab(tabName, { buttonElement });
+        }
+
+        function showTab(tabName, options = {}) {
             document.querySelectorAll('.tab-content').forEach(tab => {
                 tab.classList.remove('active');
             });
             
             document.querySelectorAll('.tab-btn').forEach(btn => {
-                btn.classList.remove('active');
+                btn.classList.toggle('active', btn.dataset.tab === tabName);
             });
             
-            document.getElementById(tabName + 'Tab').classList.add('active');
-            buttonElement.classList.add('active');
+            const targetTab = document.getElementById(tabName + 'Tab');
+            if (targetTab) targetTab.classList.add('active');
+            if (options.buttonElement) options.buttonElement.classList.add('active');
+            closeNavigationMenu();
             
+            if (options.refresh === false) return;
             if (tabName === 'accounts') {
                 refreshAccounts();
             } else if (tabName === 'webdav') {
