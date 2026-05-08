@@ -432,6 +432,26 @@ async function recordOAuthAttempt(identifier, success) {
     }
 }
 
+
+function hashStringToHex(input) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(input)).then(buffer => {
+        return Array.from(new Uint8Array(buffer)).map(byte => byte.toString(16).padStart(2, '0')).join('');
+    });
+}
+
+async function constantTimeStringEqual(actual, expected) {
+    if (typeof actual !== 'string' || typeof expected !== 'string') return false;
+    const actualHash = await hashStringToHex(actual);
+    const expectedHash = await hashStringToHex(expected);
+    if (actualHash.length !== expectedHash.length) return false;
+
+    let diff = 0;
+    for (let i = 0; i < actualHash.length; i++) {
+        diff |= actualHash.charCodeAt(i) ^ expectedHash.charCodeAt(i);
+    }
+    return diff === 0;
+}
+
 // ===== 安全日志 =====
 async function logSecurityEvent(event, details, request) {
     try {
@@ -744,6 +764,104 @@ function getCorsHeaders(request, env) {
         'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization'
     };
+}
+
+
+// ===== 自定义管理员登录 =====
+async function handleAdminLogin(request, env) {
+    const corsHeaders = getCorsHeaders(request, env);
+
+    if (request.method !== 'POST') {
+        return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+            status: 405,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    }
+
+    const clientIP = request.headers.get('CF-Connecting-IP') || 'unknown';
+
+    try {
+        if (!env.ADMIN_USERNAME || !env.ADMIN_PASSWORD) {
+            await logSecurityEvent('ADMIN_LOGIN_UNCONFIGURED', 'ADMIN_USERNAME or ADMIN_PASSWORD is missing', request);
+            return new Response(JSON.stringify({ error: 'Admin login is not configured' }), {
+                status: 503,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        if (!env.JWT_SECRET) {
+            await logSecurityEvent('ADMIN_LOGIN_UNCONFIGURED', 'JWT_SECRET is missing', request);
+            return new Response(JSON.stringify({ error: 'JWT secret is not configured' }), {
+                status: 503,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        const body = await request.json().catch(() => ({}));
+        const username = typeof body.username === 'string' ? body.username.trim().substring(0, 100) : '';
+        const password = typeof body.password === 'string' ? body.password.substring(0, 256) : '';
+        const attemptKey = `admin:${clientIP}:${username || 'empty'}`;
+
+        await checkLoginAttempts(attemptKey);
+
+        const usernameMatches = await constantTimeStringEqual(username, env.ADMIN_USERNAME);
+        const passwordMatches = await constantTimeStringEqual(password, env.ADMIN_PASSWORD);
+
+        if (!usernameMatches || !passwordMatches) {
+            await recordLoginAttempt(attemptKey, false);
+            await logSecurityEvent('ADMIN_LOGIN_FAILED', { username }, request);
+            return new Response(JSON.stringify({ error: 'Invalid admin username or password' }), {
+                status: 401,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        const userInfo = {
+            id: `admin:${env.ADMIN_USERNAME}`,
+            username: env.ADMIN_USERNAME,
+            nickname: '自定义管理员',
+            email: '变量管理员账号',
+            role: 'admin',
+            loginMethod: 'admin'
+        };
+
+        const payload = {
+            userInfo,
+            ip: clientIP,
+            loginMethod: 'admin',
+            iat: Math.floor(Date.now() / 1000),
+            exp: Math.floor(Date.now() / 1000) + SECURITY_CONFIG.JWT_EXPIRY
+        };
+
+        const token = await generateSecureJWT(payload, env.JWT_SECRET);
+
+        await recordLoginAttempt(attemptKey, true);
+        await logSecurityEvent('ADMIN_LOGIN_SUCCESS', { username: env.ADMIN_USERNAME }, request);
+
+        return new Response(JSON.stringify({
+            success: true,
+            token,
+            userInfo,
+            message: 'Admin login successful'
+        }), {
+            status: 200,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    } catch (error) {
+        console.error('Admin login error:', error);
+        if (error.message && error.message.includes('Account locked')) {
+            return new Response(JSON.stringify({ error: error.message }), {
+                status: 429,
+                headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+            });
+        }
+
+        await logSecurityEvent('ADMIN_LOGIN_ERROR', { error: error.message }, request);
+        return new Response(JSON.stringify({ error: 'Admin login failed' }), {
+            status: 500,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+    }
 }
 
 // ===== OAuth授权URL构建 =====
@@ -2341,6 +2459,170 @@ header h1 {
 ::-webkit-scrollbar-thumb:hover {
     background: linear-gradient(135deg, #5a6fd8 0%, #6d4193 100%);
 }
+
+/* 淡雅国风主题 */
+body {
+    font-family: 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: #2f332f;
+    background:
+        radial-gradient(circle at 15% 15%, rgba(120, 142, 124, 0.22), transparent 28%),
+        radial-gradient(circle at 84% 8%, rgba(178, 151, 105, 0.16), transparent 24%),
+        linear-gradient(145deg, #f7f3e8 0%, #eef2e7 48%, #e2ebe6 100%);
+    position: relative;
+    overflow-x: hidden;
+}
+
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    background:
+        linear-gradient(115deg, transparent 0 58%, rgba(67, 88, 76, 0.06) 58% 59%, transparent 59% 100%),
+        radial-gradient(ellipse at 50% 100%, rgba(83, 103, 91, 0.16), transparent 42%);
+    mask-image: linear-gradient(to bottom, rgba(0,0,0,0.95), rgba(0,0,0,0.45));
+}
+
+header {
+    color: #385044;
+}
+
+header h1 {
+    text-shadow: 0 10px 24px rgba(67, 88, 76, 0.16);
+}
+
+.card {
+    background: rgba(255, 252, 241, 0.88);
+    border-radius: 22px;
+    border: 1px solid rgba(142, 121, 82, 0.22);
+    box-shadow: 0 24px 60px rgba(65, 75, 65, 0.13), inset 0 0 0 1px rgba(156, 134, 94, 0.12);
+}
+
+.nav-tabs {
+    background: rgba(255, 252, 241, 0.82);
+    border-radius: 18px;
+}
+
+.btn-primary,
+.category-tag,
+.tab-btn::before,
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(135deg, #7f927c 0%, #a68059 100%);
+}
+
+.btn-primary,
+.btn-secondary,
+.btn-success,
+.btn-danger,
+.btn-warning,
+.oauth-login-btn,
+.tab-btn.active,
+.category-tag,
+.action-btn.copy,
+.action-btn.edit,
+.action-btn.delete {
+    color: #fffaf0;
+}
+
+.tab-btn.active {
+    box-shadow: 0 8px 18px rgba(126, 105, 75, 0.24);
+}
+
+.tab-btn:hover:not(.active) {
+    background: rgba(126, 146, 124, 0.14);
+    color: #516956;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.search-input:focus {
+    border-color: #8da078;
+    box-shadow: 0 0 0 4px rgba(141, 160, 120, 0.16);
+}
+
+.account-card {
+    background: rgba(255, 253, 246, 0.9);
+    border: 1px solid rgba(142, 121, 82, 0.18);
+}
+
+.account-card::before {
+    background: linear-gradient(135deg, rgba(126, 146, 124, 0.08) 0%, rgba(176, 138, 98, 0.08) 100%);
+}
+
+.account-card:hover {
+    border-color: rgba(142, 121, 82, 0.36);
+}
+
+.oauth-login-btn {
+    background: linear-gradient(135deg, #6e8a75 0%, #b08a62 100%);
+    box-shadow: 0 10px 24px rgba(103, 126, 105, 0.24);
+}
+
+.oauth-login-btn:hover {
+    box-shadow: 0 16px 34px rgba(103, 126, 105, 0.3);
+}
+
+.security-indicator,
+.user-profile,
+.session-timer {
+    background: rgba(255, 252, 241, 0.42);
+    border-color: rgba(142, 121, 82, 0.24);
+    color: #385044;
+}
+
+.user-name {
+    color: #385044;
+}
+
+.user-email {
+    color: rgba(56, 80, 68, 0.72);
+}
+
+.auth-divider {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+    margin: 1.15rem 0;
+    color: #8a7a61;
+    font-size: 0.85rem;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+    content: '';
+    height: 1px;
+    flex: 1;
+    background: linear-gradient(90deg, transparent, rgba(138, 122, 97, 0.35), transparent);
+}
+
+.admin-login-form {
+    margin-top: 1rem;
+    padding: 1.15rem;
+    border: 1px solid rgba(142, 121, 82, 0.24);
+    border-radius: 18px;
+    background: rgba(255, 249, 235, 0.62);
+    box-shadow: inset 0 0 35px rgba(126, 146, 124, 0.06);
+}
+
+.admin-login-form .form-group {
+    margin-bottom: 0.9rem;
+    text-align: left;
+}
+
+.admin-login-btn {
+    width: 100%;
+    background: linear-gradient(135deg, #425c51 0%, #8d6a48 100%);
+    color: #fffaf0;
+    box-shadow: 0 10px 22px rgba(73, 91, 79, 0.22);
+}
+
+.login-hint {
+    color: #7c705e;
+    margin-top: 0.8rem;
+    font-size: 0.82rem;
+}
+
 </style>
 
 
@@ -2383,6 +2665,20 @@ header h1 {
 		    </span>
 		    <span>使用Linux.do账号登录</span>
 		</button>
+
+		<div class="auth-divider"><span>或使用自定义管理员</span></div>
+		<form id="adminLoginForm" class="admin-login-form">
+		    <div class="form-group">
+		        <label for="adminUsername">管理员账号</label>
+		        <input type="text" id="adminUsername" name="username" placeholder="ADMIN_USERNAME" autocomplete="username" maxlength="100" required>
+		    </div>
+		    <div class="form-group">
+		        <label for="adminPassword">管理员密码</label>
+		        <input type="password" id="adminPassword" name="password" placeholder="ADMIN_PASSWORD" autocomplete="current-password" maxlength="256" required>
+		    </div>
+		    <button type="submit" class="btn admin-login-btn">🗝️ 管理员登录</button>
+		    <p class="login-hint">通过 Worker 环境变量 ADMIN_USERNAME / ADMIN_PASSWORD 配置，登录后权限与 OAuth 账号一致。</p>
+		</form>
 		
 		<!-- GitHub 开源仓库链接 -->
 		<div class="github-link">
@@ -2738,6 +3034,10 @@ header h1 {
         
         function setupEventListeners() {
             document.getElementById('addAccountForm').addEventListener('submit', handleAddAccount);
+            const adminLoginForm = document.getElementById('adminLoginForm');
+            if (adminLoginForm) {
+                adminLoginForm.addEventListener('submit', handleAdminLogin);
+            }
             document.getElementById('modal').addEventListener('click', (e) => {
                 if (e.target.id === 'modal') closeModal();
             });
@@ -2755,6 +3055,59 @@ header h1 {
             }
         }
         
+
+        async function handleAdminLogin(event) {
+            event.preventDefault();
+
+            const form = event.currentTarget;
+            const submitButton = form.querySelector('button[type="submit"]');
+            const originalText = submitButton.textContent;
+            const username = document.getElementById('adminUsername').value.trim();
+            const password = document.getElementById('adminPassword').value;
+
+            if (!username || !password) {
+                showFloatingMessage('❌ 请输入管理员账号和密码', 'error');
+                return;
+            }
+
+            try {
+                submitButton.disabled = true;
+                submitButton.textContent = '🔄 正在登录...';
+                showFloatingMessage('🔄 正在验证管理员账号...', 'warning');
+
+                const response = await fetch('/api/admin/login', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username, password })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    authToken = data.token;
+                    userInfo = data.userInfo;
+                    loginTime = Date.now();
+
+                    localStorage.setItem('authToken', authToken);
+                    localStorage.setItem('userInfo', JSON.stringify(userInfo));
+                    localStorage.setItem('loginTime', loginTime);
+
+                    form.reset();
+                    showMainSection();
+                    refreshAccounts();
+                    startSessionTimer();
+                    showFloatingMessage('✅ 管理员登录成功！', 'success');
+                } else {
+                    showFloatingMessage('❌ 管理员登录失败：' + (data.error || '未知错误'), 'error');
+                }
+            } catch (error) {
+                showFloatingMessage('❌ 管理员登录请求失败：' + error.message, 'error');
+            } finally {
+                submitButton.disabled = false;
+                submitButton.textContent = originalText;
+            }
+        }
+
         function startOAuthLogin() {
             showFloatingMessage('🔄 正在跳转到授权页面...', 'warning');
             window.location.href = '/api/oauth/authorize';
@@ -5887,6 +6240,7 @@ export default {
                 });
             }
             
+            if (path === '/api/admin/login') return await handleAdminLogin(request, env);
             if (path === '/api/oauth/authorize') return await handleOAuthAuthorize(request, env);
             if (path === '/api/oauth/callback') return await handleOAuthCallback(request, env);
             if (path === '/api/accounts') return await handleAccounts(request, env);

@@ -87,6 +87,7 @@
     OAUTH_BASE_URL = "https://your-oauth-server.com"
     OAUTH_REDIRECT_URI = "https://your-domain.workers.dev/api/oauth/callback"
     OAUTH_ID = "authorized_user_id"
+    ADMIN_USERNAME = "admin"
 
     [env.production.vars]
     ALLOWED_ORIGINS = "https://your-domain.workers.dev"
@@ -98,6 +99,9 @@
     # OAuth 配置
     wrangler secret put OAUTH_CLIENT_ID
     wrangler secret put OAUTH_CLIENT_SECRET
+
+    # 自定义管理员账号（可选，启用后可与 OAuth 同等登录）
+    wrangler secret put ADMIN_PASSWORD
 
     # 安全密钥
     wrangler secret put JWT_SECRET
@@ -130,6 +134,8 @@
 
 | 变量名           | 描述         | 默认值 |
 | :--------------- | :----------- | :----- |
+| `ADMIN_USERNAME` | 自定义管理员账号；与 `ADMIN_PASSWORD` 同时配置后启用变量管理员登录 | 未启用 |
+| `ADMIN_PASSWORD` | 自定义管理员密码，建议使用 Secret 类型保存 | 未启用 |
 | `ALLOWED_ORIGINS` | 允许的跨域来源 | `*`    |
 
 ### OAuth 服务器配置
@@ -164,9 +170,8 @@ OAUTH_ID=your_user_id
 
 1.  **登录系统**
 
-      * 点击"第三方授权登录"按钮
-      * 在 OAuth 服务器完成授权
-      * 自动跳转回系统主界面
+      * 点击"第三方授权登录"按钮，在 OAuth 服务器完成授权后自动跳转回系统主界面
+      * 或输入通过 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 配置的自定义管理员账号密码登录；登录后的访问权限与 OAuth 账号一致
 
 2.  **添加 2FA 账户**
 
