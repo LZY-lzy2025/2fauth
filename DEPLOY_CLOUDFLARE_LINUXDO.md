@@ -186,6 +186,8 @@ OAUTH_ID=12345
 
 | 变量名 | 类型建议 | 示例 | 说明 |
 | --- | --- | --- | --- |
+| `ADMIN_USERNAME` | Text 或 Secret | `admin` | 自定义管理员账号；与 `ADMIN_PASSWORD` 同时配置后启用变量管理员登录 |
+| `ADMIN_PASSWORD` | Secret | 高强度密码 | 自定义管理员密码；登录后权限与 OAuth 账号一致 |
 | `ALLOWED_ORIGINS` | Text | `https://你的-worker域名` | 限制允许的跨域来源；不填时默认 `*` |
 
 建议生产环境填写 `ALLOWED_ORIGINS`，值为你的实际访问地址。例如：
@@ -253,6 +255,7 @@ https://2fa-secure-manager.example.workers.dev
 OAUTH_BASE_URL=https://connect.linux.do
 OAUTH_REDIRECT_URI=https://2fa-secure-manager.example.workers.dev/api/oauth/callback
 OAUTH_ID=12345
+ADMIN_USERNAME=admin
 ALLOWED_ORIGINS=https://2fa-secure-manager.example.workers.dev
 ```
 
@@ -261,6 +264,7 @@ ALLOWED_ORIGINS=https://2fa-secure-manager.example.workers.dev
 ```text
 OAUTH_CLIENT_ID=从 Linux Do Connect 获取的 Client Id
 OAUTH_CLIENT_SECRET=从 Linux Do Connect 获取的 Client Secret
+ADMIN_PASSWORD=自定义管理员高强度密码
 JWT_SECRET=openssl rand -base64 48 生成的随机值
 ENCRYPTION_KEY=openssl rand -base64 48 生成的另一个随机值
 ```
@@ -273,15 +277,15 @@ ENCRYPTION_KEY=openssl rand -base64 48 生成的另一个随机值
    https://你的-worker域名/
    ```
 
-2. 点击页面上的 OAuth / 第三方授权登录按钮。
-3. 页面应跳转到 Linux Do Connect 授权页面。
+2. 点击页面上的 OAuth / 第三方授权登录按钮。也可以直接输入 `ADMIN_USERNAME` / `ADMIN_PASSWORD` 登录自定义管理员账号。
+3. 使用 OAuth 时，页面应跳转到 Linux Do Connect 授权页面。
 4. 同意授权后，浏览器应跳回：
 
    ```text
    https://你的-worker域名/api/oauth/callback
    ```
 
-5. 如果 `OAUTH_ID` 匹配，系统会登录成功并返回首页。
+5. 如果 `OAUTH_ID` 匹配，系统会登录成功并返回首页；如果使用自定义管理员，只要环境变量账号密码匹配即可进入同一个主界面。
 
 ## 11. 常见问题排查
 
