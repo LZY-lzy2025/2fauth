@@ -573,6 +573,38 @@ async function generateTOTP(secret, timeStep = 30, digits = 6) {
 }
 
 // ===== JWT 功能 =====
+function base64UrlEncodeUtf8(input) {
+    const bytes = new TextEncoder().encode(input);
+    let binary = '';
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64UrlDecodeUtf8(input) {
+    const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const binary = atob(padded);
+    const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
+    return new TextDecoder().decode(bytes);
+}
+
+function base64UrlEncodeBytes(bytes) {
+    let binary = '';
+    for (const byte of bytes) {
+        binary += String.fromCharCode(byte);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function base64UrlDecodeBytes(input) {
+    const base64 = input.replace(/-/g, '+').replace(/_/g, '/');
+    const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+    const binary = atob(padded);
+    return Uint8Array.from(binary, (char) => char.charCodeAt(0));
+}
+
 async function generateSecureJWT(payload, secret) {
     const header = { alg: 'HS256', typ: 'JWT', iat: Math.floor(Date.now() / 1000) };
     const enhancedPayload = {
@@ -582,8 +614,8 @@ async function generateSecureJWT(payload, secret) {
         jti: crypto.randomUUID()
     };
     
-    const headerB64 = btoa(JSON.stringify(header)).replace(/[+/=]/g, (m) => ({'+':'-','/':'_','=':''}[m]));
-    const payloadB64 = btoa(JSON.stringify(enhancedPayload)).replace(/[+/=]/g, (m) => ({'+':'-','/':'_','=':''}[m]));
+    const headerB64 = base64UrlEncodeUtf8(JSON.stringify(header));
+    const payloadB64 = base64UrlEncodeUtf8(JSON.stringify(enhancedPayload));
     
     const data = `${headerB64}.${payloadB64}`;
     const encoder = new TextEncoder();
@@ -591,7 +623,7 @@ async function generateSecureJWT(payload, secret) {
     
     const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
     const signature = await crypto.subtle.sign('HMAC', cryptoKey, encoder.encode(data));
-    const signatureB64 = btoa(String.fromCharCode(...new Uint8Array(signature))).replace(/[+/=]/g, (m) => ({'+':'-','/':'_','=':''}[m]));
+    const signatureB64 = base64UrlEncodeBytes(new Uint8Array(signature));
     
     return `${data}.${signatureB64}`;
 }
@@ -605,11 +637,11 @@ async function verifySecureJWT(token, secret) {
         const keyData = encoder.encode(secret);
         
         const cryptoKey = await crypto.subtle.importKey('raw', keyData, { name: 'HMAC', hash: 'SHA-256' }, false, ['verify']);
-        const signature = Uint8Array.from(atob(signatureB64.replace(/[-_]/g, (m) => ({'-':'+','_':'/'}[m]))), c => c.charCodeAt(0));
+        const signature = base64UrlDecodeBytes(signatureB64);
         const isValid = await crypto.subtle.verify('HMAC', cryptoKey, signature, encoder.encode(data));
         
         if (isValid) {
-            const payload = JSON.parse(atob(payloadB64.replace(/[-_]/g, (m) => ({'-':'+','_':'/'}[m]))));
+            const payload = JSON.parse(base64UrlDecodeUtf8(payloadB64));
             if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) return null;
             return payload;
         }
@@ -2656,7 +2688,12 @@ header h1 {
         function isTokenValid() {
             if (!authToken || !loginTime) return false;
             try {
-                const payload = JSON.parse(atob(authToken.split('.')[1]));
+                const payloadPart = authToken.split('.')[1] || '';
+                const base64 = payloadPart.replace(/-/g, '+').replace(/_/g, '/');
+                const padded = base64 + '='.repeat((4 - (base64.length % 4)) % 4);
+                const binary = atob(padded);
+                const bytes = Uint8Array.from(binary, c => c.charCodeAt(0));
+                const payload = JSON.parse(new TextDecoder().decode(bytes));
                 const now = Math.floor(Date.now() / 1000);
                 return payload.exp > now;
             } catch {
