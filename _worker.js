@@ -1162,6 +1162,7 @@ body {
 
 /* 头部样式 */
 header {
+    position: relative;
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -1169,6 +1170,7 @@ header {
     color: white;
     flex-wrap: wrap;
     gap: 1rem;
+    min-height: 3rem;
 }
 
 header h1 {
@@ -1202,6 +1204,80 @@ header h1 {
     align-items: center;
     gap: 1rem;
     flex-wrap: wrap;
+}
+
+.settings-menu {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin-left: 0;
+}
+
+.settings-trigger {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 50%;
+    border: 1px solid rgba(255, 255, 255, 0.26);
+    background: rgba(255, 255, 255, 0.16);
+    color: white;
+    cursor: pointer;
+    font-size: 1.25rem;
+    box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+    backdrop-filter: blur(12px);
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.settings-trigger:hover,
+.settings-trigger.open {
+    transform: translateY(-1px) rotate(28deg);
+    background: rgba(255, 255, 255, 0.24);
+    box-shadow: 0 14px 30px rgba(0, 0, 0, 0.16);
+}
+
+.settings-panel {
+    position: absolute;
+    top: calc(100% + 0.75rem);
+    right: 0;
+    z-index: 920;
+    width: min(320px, calc(100vw - 2rem));
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding: 1rem;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: 0 20px 48px rgba(0, 0, 0, 0.16);
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-8px) scale(0.98);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.settings-panel.open {
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0) scale(1);
+}
+
+.settings-panel .security-indicator,
+.settings-panel .session-timer,
+.settings-panel .user-profile,
+.settings-panel .btn {
+    width: 100%;
+    margin: 0;
+}
+
+.settings-panel .security-indicator,
+.settings-panel .session-timer,
+.settings-panel .user-profile {
+    justify-content: flex-start;
+}
+
+.settings-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
 }
 
 .user-profile {
@@ -2505,9 +2581,11 @@ body::after {
 
 header {
     color: #385044;
+    margin-bottom: 0.8rem;
 }
 
 header h1 {
+    padding-right: 4.25rem;
     text-shadow: 0 10px 24px rgba(67, 88, 76, 0.16);
 }
 
@@ -2532,6 +2610,7 @@ header h1 {
     border: 0;
     box-shadow: none;
     padding-inline: 0;
+    padding-top: 0.35rem;
     backdrop-filter: none;
 }
 
@@ -2687,6 +2766,23 @@ header h1 {
     box-shadow: 0 16px 34px rgba(103, 126, 105, 0.3);
 }
 
+.settings-trigger {
+    background: rgba(255, 252, 241, 0.7);
+    border-color: rgba(142, 121, 82, 0.28);
+    color: #385044;
+}
+
+.settings-trigger:hover,
+.settings-trigger.open {
+    background: rgba(255, 250, 240, 0.94);
+}
+
+.settings-panel {
+    background: rgba(255, 250, 240, 0.96);
+    border-color: rgba(142, 121, 82, 0.22);
+    box-shadow: 0 22px 50px rgba(65, 75, 65, 0.18), inset 0 0 0 1px rgba(156, 134, 94, 0.1);
+}
+
 .security-indicator,
 .user-profile,
 .session-timer {
@@ -2755,23 +2851,28 @@ header h1 {
     <div class="container">
         <header>
             <h1>🔐 2FA 安全管理系统</h1>
-            <div id="userInfo" class="user-info hidden">
-                <div class="security-indicator secure">
-                    <span>🛡️</span>
-                    <span>安全连接</span>
-                </div>
-                <div class="session-timer" id="sessionTimer">
-                    会话剩余: <span id="sessionTimeLeft">2:00:00</span>
-                </div>
-                <div class="user-profile" id="userProfile">
-                    <img id="userAvatar" class="user-avatar" src="" alt="用户头像">
-                    <div class="user-details">
-                        <div class="user-name" id="userName"></div>
-                        <div class="user-email" id="userEmail"></div>
+            <div id="userInfo" class="user-info settings-menu hidden">
+                <button id="settingsToggle" class="settings-trigger" type="button" onclick="toggleSettingsMenu()" aria-label="打开安全设置" aria-expanded="false">⚙️</button>
+                <div id="settingsPanel" class="settings-panel" aria-label="安全设置菜单">
+                    <div class="security-indicator secure">
+                        <span>🛡️</span>
+                        <span>安全连接</span>
+                    </div>
+                    <div class="session-timer" id="sessionTimer">
+                        会话剩余: <span id="sessionTimeLeft">2:00:00</span>
+                    </div>
+                    <div class="user-profile" id="userProfile">
+                        <img id="userAvatar" class="user-avatar" src="" alt="用户头像">
+                        <div class="user-details">
+                            <div class="user-name" id="userName"></div>
+                            <div class="user-email" id="userEmail"></div>
+                        </div>
+                    </div>
+                    <div class="settings-actions">
+                        <button onclick="clearAllAccounts()" class="btn btn-danger btn-small">清空账号</button>
+                        <button onclick="logout()" class="btn btn-small">安全退出</button>
                     </div>
                 </div>
-                <button onclick="clearAllAccounts()" class="btn btn-danger btn-small">清空账号</button>
-                <button onclick="logout()" class="btn btn-small">安全退出</button>
             </div>
         </header>
         
@@ -3160,8 +3261,12 @@ header h1 {
         function setupEventListeners() {
             document.getElementById('addAccountForm').addEventListener('submit', handleAddAccount);
             document.addEventListener('click', handleNavigationOutsideClick);
+            document.addEventListener('click', handleSettingsOutsideClick);
             document.addEventListener('keydown', (event) => {
-                if (event.key === 'Escape') closeNavigationMenu();
+                if (event.key === 'Escape') {
+                    closeNavigationMenu();
+                    closeSettingsMenu();
+                }
             });
             const adminLoginForm = document.getElementById('adminLoginForm');
             if (adminLoginForm) {
@@ -3506,6 +3611,7 @@ header h1 {
             document.getElementById('mainSection').classList.add('hidden');
             document.getElementById('userInfo').classList.add('hidden');
             closeNavigationMenu();
+            closeSettingsMenu();
         }
         
         function showMainSection() {
@@ -3528,6 +3634,36 @@ header h1 {
             }
         }
         
+        function toggleSettingsMenu() {
+            const panel = document.getElementById('settingsPanel');
+            const toggle = document.getElementById('settingsToggle');
+            if (!panel || !toggle) return;
+
+            const isOpen = panel.classList.toggle('open');
+            toggle.classList.toggle('open', isOpen);
+            toggle.setAttribute('aria-expanded', String(isOpen));
+            toggle.setAttribute('aria-label', isOpen ? '关闭安全设置' : '打开安全设置');
+        }
+
+        function closeSettingsMenu() {
+            const panel = document.getElementById('settingsPanel');
+            const toggle = document.getElementById('settingsToggle');
+            if (!panel || !toggle) return;
+
+            panel.classList.remove('open');
+            toggle.classList.remove('open');
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-label', '打开安全设置');
+        }
+
+        function handleSettingsOutsideClick(event) {
+            const panel = document.getElementById('settingsPanel');
+            const toggle = document.getElementById('settingsToggle');
+            if (!panel || !toggle || !panel.classList.contains('open')) return;
+            if (panel.contains(event.target) || toggle.contains(event.target)) return;
+            closeSettingsMenu();
+        }
+
         function toggleNavigationMenu() {
             const panel = document.getElementById('quickNavPanel');
             const toggle = document.getElementById('quickNavToggle');
