@@ -1173,11 +1173,9 @@ header {
     min-height: 3rem;
 }
 
-header h1 {
-    font-size: 2.5rem;
-    font-weight: 700;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-    letter-spacing: -0.5px;
+.header-refresh {
+    margin: 0;
+    align-self: flex-start;
 }
 
 /* 安全指示器 */
@@ -2584,9 +2582,8 @@ header {
     margin-bottom: 0.8rem;
 }
 
-header h1 {
-    padding-right: 4.25rem;
-    text-shadow: 0 10px 24px rgba(67, 88, 76, 0.16);
+.header-refresh {
+    box-shadow: 0 12px 26px rgba(56, 80, 68, 0.18);
 }
 
 .card {
@@ -2850,7 +2847,7 @@ header h1 {
 <body>
     <div class="container">
         <header>
-            <h1>🔐 2FA 安全管理系统</h1>
+            <button id="headerRefreshButton" onclick="refreshAccounts()" class="btn btn-secondary btn-small header-refresh hidden">刷新</button>
             <div id="userInfo" class="user-info settings-menu hidden">
                 <button id="settingsToggle" class="settings-trigger" type="button" onclick="toggleSettingsMenu()" aria-label="打开安全设置" aria-expanded="false">⚙️</button>
                 <div id="settingsPanel" class="settings-panel" aria-label="安全设置菜单">
@@ -2940,11 +2937,6 @@ header h1 {
                 
                 <div id="accountsTab" class="tab-content active">
                     <div class="card">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
-                            <h2>我的2FA账户</h2>
-                            <button onclick="refreshAccounts()" class="btn btn-secondary btn-small">刷新</button>
-                        </div>
-                        
                         <div class="search-section">
                             <input type="text" 
                                    id="searchInput" 
@@ -3610,6 +3602,7 @@ header h1 {
             document.getElementById('loginSection').classList.remove('hidden');
             document.getElementById('mainSection').classList.add('hidden');
             document.getElementById('userInfo').classList.add('hidden');
+            document.getElementById('headerRefreshButton').classList.add('hidden');
             closeNavigationMenu();
             closeSettingsMenu();
         }
@@ -3618,6 +3611,7 @@ header h1 {
             document.getElementById('loginSection').classList.add('hidden');
             document.getElementById('mainSection').classList.remove('hidden');
             document.getElementById('userInfo').classList.remove('hidden');
+            document.getElementById('headerRefreshButton').classList.remove('hidden');
             showTab('accounts', { refresh: false });
             
             if (userInfo) {
